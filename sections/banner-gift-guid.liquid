@@ -1,0 +1,131 @@
+<!-- /sections/gift-banner.liquid -->
+{{ 'custom-style.css' | asset_url | stylesheet_tag }}
+
+<style>
+  .gift-banner {
+    background-image: url('{{ section.settings.banner_image | image_url: width: 2000 }}');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    padding: 00px 6% 5%;
+    color: #000;
+    height: 110vh;
+    width: 100%;
+    text-align: left;
+    font-family: 'Jost', sans-serif;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    overflow: hidden;
+    
+  }
+
+  @media (max-width: 768px) {
+    .gift-banner {
+      background-image: url('{{ section.settings.mobile_banner_image | image_url: width: 1000 }}') !important;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      padding: 450px 75px 55px;
+      color: #000;
+      height: 110vh;
+      width: 100%;
+      text-align: left;
+      font-family: 'Jost', sans-serif;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+  }
+
+</style>
+
+
+<section class="gift-banner">
+  <div class="gift-banner-bg desktop-bg" style="background-image: url('{{ section.settings.banner_image | image_url: width: 2000 }}');"></div>
+  <div class="gift-banner-bg mobile-bg" style="background-image: url('{{ section.settings.mobile_banner_image | image_url: width: 1000 }}');"></div>
+
+  <div class="gift-banner-content">
+    <h1>{{ section.settings.main_title }}</h1>
+    <div class="subheading desktop-subheading">{{ section.settings.subheading_text }}</div>
+    <div class="subheading mobile-subheading">{{ section.settings.subheading_text2 }}</div>
+    <div class="top-action">
+      <a href="{{ section.settings.top_button_link }}" class="btn">{{ section.settings.top_button_label }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="banner-below-text">
+  <div class="subheading desktop-subheading">{{ section.settings.subheading_text3 }}</div>
+  <div class="subheading sub-2 mobile-subheading">{{ section.settings.subheading_text4 }}</div>
+</section>
+
+
+{% schema %}
+{
+  "name": "Banner with Subheadings",
+  "settings": [
+        {
+          "type": "image_picker",
+          "id": "banner_image",
+          "label": "Banner Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "mobile_banner_image",
+          "label": "Mobile Banner Image"
+        },
+        {
+          "type": "text",
+          "id": "main_title",
+          "label": "Main Title",
+          "default": "The Gift Guide"
+        },
+        {
+          "type": "text",
+          "id": "subheading_text",
+          "label": "First Subheading",
+          "default": "Discover Joy: Your Ultimate Holiday Gift Destination."
+        },
+        {
+          "type": "text",
+          "id": "top_button_label",
+          "label": "Button Label",
+          "default": "SHOP NOW"
+        },
+        {
+          "type": "url",
+          "id": "top_button_link",
+          "label": "Button Link",
+          "default": "/collections/all"
+        },
+        {
+          "type": "text",
+          "id": "subheading_text2",
+          "label": "Mobile Sub Heading",
+          "default": "Explore our curated selection and find the perfect gifts."
+        },
+        {
+          "type": "text",
+          "id": "subheading_text3",
+          "label": "Second Subheading",
+          "default": "Explore our curated selection and find the perfect gifts."
+        },
+        {
+          "type": "text",
+          "id": "subheading_text4",
+          "label": "Mobile Sub Heading",
+          "default": "Explore our curated selection and find the perfect gifts."
+        }
+    ],
+  "presets": [
+    {
+      "name": "Banner with Subheadings",
+      "category": "Banner"
+    }
+  ]
+}
+{% endschema %}

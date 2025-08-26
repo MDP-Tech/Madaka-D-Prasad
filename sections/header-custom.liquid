@@ -1,0 +1,62 @@
+<!-- style calling -->
+{{ 'custom-style.css' | asset_url | stylesheet_tag }}
+
+<section class="custom-header-section">
+  <header class="custom-header">
+    <div class="header-left">
+      <button class="mobile-menu-icon" aria-label="Open menu">&#9776;</button>
+      <span class="logo">{{ section.settings.logo_text }}</span>
+    </div>
+
+    <div class="header-center">
+      <span class="center-text">{{ section.settings.center_text }}</span>
+    </div>
+
+    <div class="header-right">
+      <a href="{{ section.settings.button_link }}" class="choose-gift-btn">
+        {{ section.settings.button_text }} →
+      </a>
+    </div>
+  </header>
+</section>
+
+
+{% schema %}
+{
+  "name": "Custom Header",
+  "settings": [
+    {
+      "type": "text",
+      "id": "logo_text",
+      "label": "Logo Text",
+      "default": "TISSO VISON"
+    },
+    {
+      "type": "text",
+      "id": "center_text",
+      "label": "Center Text",
+      "default": "Find the ideal gift for your loved ones."
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "CHOOSE GIFT"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button Link",
+      "default": "/"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Responsive Header",
+      "category": "Header"
+    }
+  ]
+}
+{% endschema %}
+
+

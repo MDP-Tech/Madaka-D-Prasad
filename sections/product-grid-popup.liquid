@@ -1,0 +1,248 @@
+
+<!-- Style -->
+{{ 'custom-style.css' | asset_url | stylesheet_tag }}
+
+<!-- /sections/product-grid-popup.liquid -->
+<section class="product-grid-section">
+    <h2>{{ section.settings.title }}</h2>
+    <div class="product-grid">
+        {% for block in section.blocks %} {% assign product = all_products[block.settings.product] %} {% if product %}
+        <div class="product-card" data-handle="{{ product.handle }}" data-product-id="{{ product.id }}">
+            <div class="image-wrapper">
+                {% if product.featured_image %}
+                  <img
+                    srcset="
+                      {%- if product.featured_image.width >= 165 -%}{{ product.featured_image | image_url: width: 165 }} 165w,{%- endif -%}
+                      {%- if product.featured_image.width >= 360 -%}{{ product.featured_image | image_url: width: 360 }} 360w,{%- endif -%}
+                      {%- if product.featured_image.width >= 535 -%}{{ product.featured_image | image_url: width: 535 }} 535w,{%- endif -%}
+                      {%- if product.featured_image.width >= 750 -%}{{ product.featured_image | image_url: width: 750 }} 750w,{%- endif -%}
+                      {%- if product.featured_image.width >= 1070 -%}{{ product.featured_image | image_url: width: 1070 }} 1070w,{%- endif -%}
+                      {%- if product.featured_image.width >= 1500 -%}{{ product.featured_image | image_url: width: 1500 }} 1500w,{%- endif -%}
+                      {{ product.featured_image | image_url }} {{ product.featured_image.width }}w
+                    "
+                    src="{{ product.featured_image | image_url: width: 750 }}"
+                    sizes="(min-width: {{ settings.page_width }}px) {{ settings.page_width | minus: 100 | divided_by: 2 }}px, (min-width: 750px) calc(50vw - 130px), calc(50vw - 55px)"
+                    alt="{{ product.featured_image.alt | escape }}"
+                    width="{{ product.featured_image.width }}"
+                    height="{{ product.featured_image.height }}"
+                    loading="lazy"
+                  >
+                {% endif %}
+
+                <span class="plus-icon">+</span>
+            </div>
+        </div>
+        {% endif %} {% endfor %}
+    </div>
+
+    <!-- Popup -->
+    <div id="product-popup" class="popup hidden">
+        <div class="popup-content">
+            <button id="close-popup"></button>
+            <div id="popup-body"></div>
+        </div>
+    </div>
+</section>
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const popup = document.getElementById("product-popup");
+        const popupBody = document.getElementById("popup-body");
+
+        let selectedColor = null;
+        let selectedSize = null;
+        let variants = [];
+
+        function findMatchingVariant(color, size) {
+            return variants.find((v) => {
+                const [vColor, vSize] = v.title.split(" / ");
+                return vColor.trim() === color && vSize.trim() === size;
+            });
+        }
+
+        function updateSelectedVariant() {
+            const matched = findMatchingVariant(selectedColor, selectedSize);
+            if (matched) {
+                selectedVariantId = matched.id;
+                const priceEl = popupBody.querySelector(".price");
+                const formatted = (matched.price / 100).toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                });
+                if (priceEl) priceEl.textContent = formatted;
+            }
+        }
+
+        document.querySelectorAll(".product-card .plus-icon").forEach((icon) => {
+            icon.addEventListener("click", async (event) => {
+                event.stopPropagation();
+                const productCard = icon.closest(".product-card");
+                const handle = productCard.dataset.handle;
+
+                try {
+                    const response = await fetch(`/products/${handle}.js`);
+                    if (!response.ok) throw new Error("Network error");
+                    const product = await response.json();
+
+                    variants = product.variants;
+                    const firstAvailable = variants.find((v) => v.available) || variants[0];
+                    selectedVariantId = firstAvailable.id;
+
+                    // Parse color/size
+                    const sizes = new Set();
+                    const colors = new Set();
+                    variants.forEach((v) => {
+                        const [size, color] = v.title.split(" / ");
+                        if (color) colors.add(color.trim());
+                        if (size) sizes.add(size.trim());
+                    });
+
+                    selectedColor = firstAvailable.title.split(" / ")[0].trim();
+                    selectedSize = firstAvailable.title.split(" / ")[1].trim();
+
+                    const formattedPrice = (firstAvailable.price / 100).toLocaleString("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                    });
+
+                    popupBody.innerHTML = `
+          <div class="product-details-section">
+            <img src="${product.featured_image}" alt="${product.title}" />
+            <div>
+              <h3>${product.title}</h3>
+              <div class="price">${formattedPrice}</div>
+              <p>${product.description}</p>
+            </div>
+          </div>
+
+          <div class="variant-section">
+            <div class="color-picker">
+              <label>Color</label>
+              <div class="color-options" id="color-options">
+                ${Array.from(colors)
+                    .map(
+                        (color) => `
+                  <div class="color-option ${color === selectedColor ? "selected" : ""}" data-color="${color}">
+                    <span class="color-bar" style="background-color: ${color.toLowerCase()};"></span>
+                    ${color}
+                  </div>
+                `
+                    )
+                    .join("")}
+              </div>
+            </div>
+
+            <div class="size-picker">
+              <label>Size</label>
+              <select id="size-options">
+                <option value="" disabled selected>Choose your size</option>
+                ${Array.from(sizes)
+                  .map(
+                    (size) => `
+                      <option value="${size}" ${size === selectedSize ? "selected" : ""}>${size}</option>
+                    `
+                  )
+                  .join("")}
+              </select>
+
+            </div>
+          </div>
+
+          <button id="add-to-cart">ADD TO CART</button>
+          <button id="close-popup" aria-label="Close popup">&times;</button>
+        `;
+
+                    popup.classList.remove("hidden");
+
+                    // Handle color selection
+                    popupBody.querySelectorAll(".color-option").forEach((opt) => {
+                        opt.addEventListener("click", () => {
+                            popupBody.querySelectorAll(".color-option").forEach((o) => o.classList.remove("selected"));
+                            opt.classList.add("selected");
+                            selectedColor = opt.getAttribute("data-color");
+                            updateSelectedVariant();
+                        });
+                    });
+
+                    // Handle size selection
+                    popupBody.querySelector("#size-options").addEventListener("change", (e) => {
+                        selectedSize = e.target.value;
+                        updateSelectedVariant();
+                    });
+
+                    // Add to Cart
+                    popupBody.querySelector("#add-to-cart").addEventListener("click", () => {
+                        if (!selectedColor || !selectedSize || !selectedVariantId) {
+                            alert("Please select a color and size.");
+                            return;
+                        }
+
+                        fetch("/cart/add.js", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: selectedVariantId, quantity: 1 }),
+                        })
+                            .then((res) => {
+                                if (!res.ok) throw new Error();
+                                return res.json();
+                            })
+                            .then(() => {
+                                alert("Added to cart!");
+                                popup.classList.add("hidden");
+                            })
+                            .catch(() => alert("Failed to add to cart."));
+                    });
+
+                    popupBody.querySelector("#close-popup").addEventListener("click", () => {
+                        popup.classList.add("hidden");
+                    });
+                } catch (err) {
+                    console.error(err);
+                    alert("Failed to load product details.");
+                }
+            });
+        });
+
+        // Close when clicking outside
+        popup.addEventListener("click", (e) => {
+            if (e.target === popup) popup.classList.add("hidden");
+        });
+    });
+</script>
+
+{% schema %}
+{
+  "name": "Product Grid Popup",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Grid Title",
+      "default": "Tisso vison in the wild"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product_block",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Select Product"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 6,
+  "presets": [
+    {
+      "name": "Product Grid Popup",
+      "blocks": []
+    }
+  ]
+}
+{% endschema %}
+
